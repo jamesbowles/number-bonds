@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Number Bonds</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Baloo+2:wght@600;800&display=swap">
+<style>
+/* Layout: a classroom display. Teacher controls in a slim top bar, one big part-whole model filling the stage, step buttons along the bottom. */
+:root {
+  --bg: #F3F6FB;
+  --surface: #FFFFFF;
+  --ink: #1E2433;
+  --ink-soft: #5B6478;
+  --line: #CBD3E1;
+  --accent: #3D5AFE;
+  --accent-ink: #FFFFFF;
+  --partA: #E5484D;
+  --partB: #2F7FD8;
+  --whole: #4B4560;
+  --hole: #FFFFFF;
+  --frame: #8C97AD;
+  --chip: #E7ECF5;
+  --font-display: "Baloo 2", "Comic Sans MS", system-ui, sans-serif;
+  --font-body: "Andika", "Trebuchet MS", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12151F; --surface: #1C2130; --ink: #EEF1F8; --ink-soft: #A3ADC2; --line: #39415A;
+    --accent: #7B8CFF; --accent-ink: #0D1020; --partA: #FF6B6F; --partB: #5AA2F5; --whole: #C9C2E0;
+    --hole: #1C2130; --frame: #6F7A93; --chip: #262C3E; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12151F; --surface: #1C2130; --ink: #EEF1F8; --ink-soft: #A3ADC2; --line: #39415A;
+  --accent: #7B8CFF; --accent-ink: #0D1020; --partA: #FF6B6F; --partB: #5AA2F5; --whole: #C9C2E0;
+  --hole: #1C2130; --frame: #6F7A93; --chip: #262C3E; color-scheme: dark;
+}
+html, body { height: 100%; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px;
+  display: flex; flex-direction: column;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 10px;
+  box-sizing: border-box; gap: 10px;
+}
+*, *::before, *::after { box-sizing: inherit; }
+[hidden] { display: none !important; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
+.brand { font-family: var(--font-display); font-weight: 800; font-size: 1.5rem; margin-right: auto; letter-spacing: .01em; }
+.group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.label { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-soft); margin-right: 2px; }
+.seg { display: flex; background: var(--chip); border-radius: 12px; padding: 3px; gap: 2px; flex-wrap: wrap; }
+.seg button {
+  border: 0; background: transparent; padding: 6px 12px; border-radius: 9px; font-weight: 700; font-size: .95rem;
+  min-width: 36px;
+}
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.seg.num button { padding: 6px 0; width: 36px; font-family: var(--font-display); font-size: 1.05rem; }
+
+.stage {
+  flex: 1; min-height: 0; background: var(--surface); border-radius: 22px; border: 1px solid var(--line);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 12px; gap: 6px;
+  overflow: hidden; position: relative;
+}
+#modelWrap { width: 100%; flex: 1; min-height: 0; display: flex; }
+#model { width: 100%; height: 100%; }
+.equation {
+  font-family: var(--font-display); font-weight: 800; font-size: clamp(2rem, 6vh, 4rem); line-height: 1;
+  display: flex; gap: .35em; align-items: baseline; font-variant-numeric: tabular-nums;
+}
+.equation .a { color: var(--partA); } .equation .b { color: var(--partB); }
+.equation .op { color: var(--ink-soft); font-weight: 600; }
+.equation.plain .a, .equation.plain .b { color: var(--ink); }
+.equation .q { color: var(--ink-soft); }
+.pop { animation: pop .45s cubic-bezier(.3,1.6,.5,1); transform-origin: center; transform-box: fill-box; }
+@keyframes pop { from { transform: scale(.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .pop { animation: none; } }
+
+.all { width: 100%; height: 100%; overflow: auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; align-content: start; padding: 4px; }
+.row {
+  display: grid; grid-template-columns: 1fr auto 1fr auto auto; align-items: center; gap: 8px;
+  border: 2px solid var(--line); border-radius: 16px; padding: 8px 12px; background: var(--surface); text-align: left;
+}
+.row:hover { border-color: var(--accent); }
+.row svg { width: 100%; height: 84px; }
+.row .sym { font-family: var(--font-display); font-size: 1.6rem; color: var(--ink-soft); }
+.row .tot { font-family: var(--font-display); font-weight: 800; font-size: 1.9rem; min-width: 1.4em; text-align: center; }
+.row .pair { font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; color: var(--ink-soft); white-space: nowrap; }
+
+.nav { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; align-items: center; }
+.big {
+  border: 0; border-radius: 14px; padding: 12px 22px; font-weight: 700; font-size: 1.15rem;
+  background: var(--chip);
+}
+.big.primary { background: var(--accent); color: var(--accent-ink); }
+.hint { color: var(--ink-soft); font-size: .85rem; text-align: center; }
+kbd { font-family: var(--font-body); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 0 5px; font-size: .8rem; }
+.counter { font-family: var(--font-display); color: var(--ink-soft); font-size: 1rem; min-width: 4em; text-align: center; }
+@media (max-width: 640px) { .brand { width: 100%; } .hint { display: none; } }
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="brand">Number Bonds</div>
+  <div class="group" role="group" aria-label="Activity">
+    <div class="seg" id="modeSeg">
+      <button id="m-explore" data-mode="explore">Explore</button>
+      <button id="m-missing" data-mode="missing">Missing part</button>
+      <button id="m-all" data-mode="all">All bonds</button>
+    </div>
+  </div>
+</header>
+<div class="bar">
+  <div class="group"><span class="label">Bonds to</span><div class="seg num" id="wholeSeg"></div></div>
+  <div class="group"><span class="label">Show as</span>
+    <div class="seg" id="visSeg">
+      <button id="v-dots" data-vis="dots">Dots</button>
+      <button id="v-frame" data-vis="frame">Ten frame</button>
+      <button id="v-numicon" data-vis="numicon">Numicon</button>
+    </div>
+  </div>
+  <div class="group"><span class="label">Numerals</span>
+    <div class="seg" id="numSeg">
+      <button id="n-on" data-num="1">Show</button>
+      <button id="n-off" data-num="0">Hide</button>
+    </div>
+  </div>
+</div>
+
+<main class="stage" id="stage">
+  <div id="modelWrap"><svg id="model" viewBox="0 0 1000 640" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Part-whole model"></svg></div>
+  <div class="equation" id="equation"></div>
+  <div class="all" id="all" hidden></div>
+</main>
+
+<nav class="nav" id="nav"></nav>
+<div class="hint" id="hint"></div>
+
+<script>
+(function () {
+  // Numicon-style plate colours, one per number.
+  var PLATE = { 1:'#F28C28', 2:'#6EC6F0', 3:'#9BCB4A', 4:'#F49AC1', 5:'#FFD23F', 6:'#8E5BB5', 7:'#FAFAF7', 8:'#E2393B', 9:'#2E8B57', 10:'#1F4FA3' };
+  var EDGE  = { 1:'#B35F12', 2:'#3B93BD', 3:'#6C9A25', 4:'#C9659A', 5:'#C9A11C', 6:'#5E3683', 7:'#9AA0AE', 8:'#A3191B', 9:'#1A5C38', 10:'#132F66' };
+
+  var S = { mode: 'explore', whole: 5, vis: 'dots', nums: true, part: 0, missA: 2, hideSide: 1, revealed: false };
+  try { var saved = JSON.parse(localStorage.getItem('nb-settings') || '{}'); ['mode','whole','vis','nums'].forEach(function (k) { if (k in saved) S[k] = saved[k]; }); } catch (e) {}
+  if (['dots','frame','numicon'].indexOf(S.vis) < 0) S.vis = 'dots';
+  if (!(S.whole >= 2 && S.whole <= 10)) S.whole = 5;
+  function save() { try { localStorage.setItem('nb-settings', JSON.stringify({ mode:S.mode, whole:S.whole, vis:S.vis, nums:S.nums })); } catch (e) {} }
+
+  var $ = function (id) { return document.getElementById(id); };
+  var wholeSeg = $('wholeSeg');
+  for (var i = 2; i <= 10; i++) { var b = document.createElement('button'); b.id = 'w-' + i; b.textContent = i; b.dataset.whole = i; wholeSeg.appendChild(b); }
+
+  // ---------- drawing helpers ----------
+  function roundedPath(pts, r) {
+    var d = '', n = pts.length;
+    for (var i = 0; i < n; i++) {
+      var p = pts[i], a = pts[(i - 1 + n) % n], c = pts[(i + 1) % n];
+      var v1 = norm(a[0] - p[0], a[1] - p[1]), v2 = norm(c[0] - p[0], c[1] - p[1]);
+      var s = [p[0] + v1[0] * r, p[1] + v1[1] * r], e = [p[0] + v2[0] * r, p[1] + v2[1] * r];
+      d += (i === 0 ? 'M' : 'L') + f(s[0]) + ' ' + f(s[1]) + ' Q' + f(p[0]) + ' ' + f(p[1]) + ' ' + f(e[0]) + ' ' + f(e[1]) + ' ';
+    }
+    return d + 'Z';
+  }
+  function norm(x, y) { var l = Math.hypot(x, y) || 1; return [x / l, y / l]; }
+  function f(x) { return Math.round(x * 100) / 100; }
+
+  // Every visual is drawn on a grid sized for the WHOLE, so parts and whole share one scale.
+  // Returns { w, h, svg } in grid units.
+  function numiconPlate(n, x, y, u) {
+    var rows = Math.ceil(n / 2), H = rows * u, pts;
+    if (n === 1) pts = [[0,0],[u,0],[u,u],[0,u]];
+    else if (n % 2 === 0) pts = [[0,0],[2*u,0],[2*u,H],[0,H]];
+    else pts = [[0,0],[u,0],[u,u],[2*u,u],[2*u,H],[0,H]];
+    pts = pts.map(function (p) { return [p[0] + x, p[1] + y]; });
+    var out = '<path d="' + roundedPath(pts, u * 0.22) + '" fill="' + PLATE[n] + '" stroke="' + EDGE[n] + '" stroke-width="' + f(u * 0.06) + '" stroke-linejoin="round"/>';
+    var holes = [];
+    if (n % 2 === 1) holes.push([0.5, 0.5]);
+    for (var r = (n % 2); r < rows; r++) { holes.push([0.5, r + 0.5]); holes.push([1.5, r + 0.5]); }
+    if (n === 1) holes = [[0.5, 0.5]];
+    holes.forEach(function (h) {
+      out += '<circle cx="' + f(x + h[0] * u) + '" cy="' + f(y + h[1] * u) + '" r="' + f(u * 0.27) + '" fill="var(--hole)" stroke="' + EDGE[n] + '" stroke-width="' + f(u * 0.05) + '"/>';
+    });
+    return out;
+  }
+
+  function visual(kind, n, whole, colours) {
+    // colours: array of length n with fill per item (dots / frame), ignored for numicon
+    var u = 10, svg = '', w, h;
+    if (kind === 'numicon') {
+      var rowsW = Math.ceil(whole / 2);
+      w = 2 * u; h = rowsW * u;
+      if (n > 0) svg = numiconPlate(n, 0, h - Math.ceil(n / 2) * u, u);
+      else svg = '<rect x="' + (u*0.1) + '" y="' + (h - u*0.9) + '" width="' + (u*1.8) + '" height="' + (u*0.8) + '" rx="' + (u*0.2) + '" fill="none" stroke="var(--frame)" stroke-width="0.5" stroke-dasharray="1.5 1.5"/>';
+      return { w: w, h: h, svg: svg };
+    }
+    var cols = 5, rows = whole > 5 ? 2 : 1;
+    w = cols * u; h = rows * u;
+    if (kind === 'frame') {
+      svg += '<rect x="0.4" y="0.4" width="' + (w - 0.8) + '" height="' + (h - 0.8) + '" rx="1.2" fill="none" stroke="var(--frame)" stroke-width="0.8"/>';
+      for (var c = 1; c < cols; c++) svg += '<line x1="' + c*u + '" y1="0.4" x2="' + c*u + '" y2="' + (h-0.4) + '" stroke="var(--frame)" stroke-width="0.6"/>';
+      if (rows === 2) svg += '<line x1="0.4" y1="' + u + '" x2="' + (w-0.4) + '" y2="' + u + '" stroke="var(--frame)" stroke-width="0.6"/>';
+      for (var k = 0; k < n; k++) {
+        var cx = (k % 5) * u + u / 2, cy = Math.floor(k / 5) * u + u / 2;
+        svg += '<circle cx="' + cx + '" cy="' + cy + '" r="' + (u * 0.36) + '" fill="' + colours[k] + '"/>';
+      }
+      return { w: w, h: h, svg: svg };
+    }
+    // dots: rows of five, each row centred
+    for (var j = 0; j < n; j++) {
+      var row = Math.floor(j / 5), inRow = Math.min(5, n - row * 5), col = j % 5;
+      var x0 = (w - inRow * u) / 2;
+      svg += '<circle cx="' + (x0 + col * u + u / 2) + '" cy="' + (row * u + u / 2 + (rows === 2 && n <= 5 ? u / 2 : 0)) + '" r="' + (u * 0.38) + '" fill="' + colours[j] + '"/>';
+    }
+    return { w: w, h: h, svg: svg };
+  }
+  function fill(n, c) { var a = []; for (var i = 0; i < n; i++) a.push(c); return a; }
+
+  function place(v, cx, cy, size, extra) {
+    return '<svg x="' + (cx - size / 2) + '" y="' + (cy - size / 2) + '" width="' + size + '" height="' + size + '" viewBox="0 0 ' + v.w + ' ' + v.h + '" preserveAspectRatio="xMidYMid meet" overflow="visible"' + (extra || '') + '>' + v.svg + '</svg>';
+  }
+
+  // ---------- part-whole model ----------
+  var G = { W: { x: 500, y: 168, r: 148 }, A: { x: 245, y: 462, r: 138 }, B: { x: 755, y: 462, r: 138 } };
+
+  function circle(c, opts) {
+    var out = '<circle cx="' + c.x + '" cy="' + c.y + '" r="' + c.r + '" fill="var(--surface)" stroke="' + (opts.stroke || 'var(--line)') + '" stroke-width="5"' + (opts.dashed ? ' stroke-dasharray="16 12"' : '') + '/>';
+    return out;
+  }
+  function badge(c, text, colour, cls) {
+    var bx = c.x + c.r * 0.74, by = c.y + c.r * 0.74;
+    return '<g class="' + (cls || '') + '"><circle cx="' + bx + '" cy="' + by + '" r="40" fill="' + colour + '"/>' +
+      '<text x="' + bx + '" y="' + (by + 2) + '" text-anchor="middle" dominant-baseline="middle" font-family="Baloo 2, system-ui, sans-serif" font-weight="800" font-size="52" fill="#FFFFFF">' + text + '</text></g>';
+  }
+
+  function drawModel(a, b, hide, revealedSide) {
+    var whole = S.whole, vis = S.vis, out = '';
+    var colA = 'var(--partA)', colB = 'var(--partB)';
+    out += '<line x1="' + G.W.x + '" y1="' + G.W.y + '" x2="' + G.A.x + '" y2="' + G.A.y + '" stroke="var(--line)" stroke-width="8" stroke-linecap="round"/>';
+    out += '<line x1="' + G.W.x + '" y1="' + G.W.y + '" x2="' + G.B.x + '" y2="' + G.B.y + '" stroke="var(--line)" stroke-width="8" stroke-linecap="round"/>';
+
+    // whole
+    out += circle(G.W, { stroke: 'var(--whole)' });
+    var wCols = hide ? fill(whole, 'var(--whole)') : fill(a, colA).concat(fill(b, colB));
+    out += place(visual(vis, whole, whole, wCols), G.W.x, G.W.y, G.W.r * 1.32);
+    if (S.nums) out += badge(G.W, whole, 'var(--whole)');
+
+    // parts
+    [['A', a, colA], ['B', b, colB]].forEach(function (p, idx) {
+      var c = G[p[0]], n = p[1], col = p[2];
+      var isHidden = hide === (idx + 1);
+      var popCls = (revealedSide === idx + 1) ? 'pop' : '';
+      if (isHidden) {
+        out += circle(c, { stroke: 'var(--frame)', dashed: true });
+        out += '<text x="' + c.x + '" y="' + (c.y + 8) + '" text-anchor="middle" dominant-baseline="middle" font-family="Baloo 2, system-ui, sans-serif" font-weight="800" font-size="170" fill="var(--ink-soft)">?</text>';
+        return;
+      }
+      out += circle(c, { stroke: vis === 'numicon' ? 'var(--line)' : col });
+      out += '<g class="' + popCls + '">' + place(visual(vis, n, whole, fill(n, col)), c.x, c.y, c.r * 1.32) + '</g>';
+      if (S.nums) out += badge(c, n, vis === 'numicon' ? 'var(--whole)' : col, popCls);
+    });
+    $('model').innerHTML = out;
+  }
+
+  function equation(a, b, hide) {
+    var eq = $('equation');
+    eq.className = 'equation' + (S.vis === 'numicon' ? ' plain' : '');
+    if (!S.nums) { eq.innerHTML = ''; return; }
+    var sa = hide === 1 ? '<span class="q">?</span>' : '<span class="a">' + a + '</span>';
+    var sb = hide === 2 ? '<span class="q">?</span>' : '<span class="b">' + b + '</span>';
+    eq.innerHTML = sa + '<span class="op">+</span>' + sb + '<span class="op">=</span><span>' + S.whole + '</span>';
+  }
+
+  // ---------- all bonds ----------
+  function miniSvg(v) { return '<svg viewBox="-1 -1 ' + (v.w + 2) + ' ' + (v.h + 2) + '" preserveAspectRatio="xMidYMid meet">' + v.svg + '</svg>'; }
+  function drawAll() {
+    var html = '';
+    for (var a = 0; a <= S.whole; a++) {
+      var b = S.whole - a;
+      html += '<button class="row" id="row-' + a + '" data-part="' + a + '">' +
+        miniSvg(visual(S.vis, a, S.whole, fill(a, 'var(--partA)'))) + '<span class="sym">+</span>' +
+        miniSvg(visual(S.vis, b, S.whole, fill(b, 'var(--partB)'))) + '<span class="sym">=</span>' +
+        (S.nums ? '<span class="tot">' + S.whole + '</span>' : '<span></span>') + '</button>';
+    }
+    $('all').innerHTML = html;
+    $('all').querySelectorAll('.row').forEach(function (r) {
+      r.addEventListener('click', function () { S.part = +r.dataset.part; S.mode = 'explore'; render(); });
+      if (S.nums) r.setAttribute('aria-label', r.dataset.part + ' plus ' + (S.whole - r.dataset.part) + ' equals ' + S.whole);
+    });
+  }
+
+  // ---------- missing part ----------
+  function newQuestion() {
+    var prev = S.missA, tries = 0;
+    do { S.missA = Math.floor(Math.random() * (S.whole + 1)); tries++; } while (S.missA === prev && tries < 20);
+    S.hideSide = Math.random() < 0.5 ? 1 : 2;
+    S.revealed = false;
+  }
+
+  // ---------- nav + render ----------
+  function btn(id, label, cls, fn) { var b = document.createElement('button'); b.id = id; b.className = 'big ' + (cls || ''); b.innerHTML = label; b.addEventListener('click', fn); return b; }
+  var actions = {
+    prev: function () { S.part = (S.part + S.whole) % (S.whole + 1); render(); },
+    next: function () { S.part = (S.part + 1) % (S.whole + 1); render(); },
+    reveal: function () { if (!S.revealed) { S.revealed = true; render(true); } else { newQuestion(); render(); } },
+    fresh: function () { newQuestion(); render(); }
+  };
+
+  function render(justRevealed) {
+    save();
+    document.querySelectorAll('#modeSeg button').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.mode === S.mode); });
+    document.querySelectorAll('#wholeSeg button').forEach(function (b) { b.setAttribute('aria-pressed', +b.dataset.whole === S.whole); });
+    document.querySelectorAll('#visSeg button').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.vis === S.vis); });
+    document.querySelectorAll('#numSeg button').forEach(function (b) { b.setAttribute('aria-pressed', (b.dataset.num === '1') === S.nums); });
+    if (S.part > S.whole) S.part = 0;
+    if (S.missA > S.whole) newQuestion();
+
+    var nav = $('nav'); nav.innerHTML = '';
+    var all = S.mode === 'all';
+    $('modelWrap').hidden = all; $('equation').hidden = all; $('all').hidden = !all;
+
+    if (S.mode === 'explore') {
+      var a = S.part, b = S.whole - a;
+      drawModel(a, b, 0, 0); equation(a, b, 0);
+      nav.appendChild(btn('prev-btn', '&larr; Back', '', actions.prev));
+      var ctr = document.createElement('span'); ctr.className = 'counter'; ctr.textContent = (a + 1) + ' of ' + (S.whole + 1); nav.appendChild(ctr);
+      nav.appendChild(btn('next-btn', 'Next &rarr;', 'primary', actions.next));
+      $('hint').innerHTML = '<kbd>&larr;</kbd> <kbd>&rarr;</kbd> step through bonds · <kbd>2</kbd>–<kbd>9</kbd>, <kbd>0</kbd> for 10: change the whole · <kbd>V</kbd> change visual · <kbd>F</kbd> full screen';
+    } else if (S.mode === 'missing') {
+      var ma = S.missA, mb = S.whole - ma, hide = S.revealed ? 0 : S.hideSide;
+      drawModel(ma, mb, hide, justRevealed ? S.hideSide : 0); equation(ma, mb, hide);
+      nav.appendChild(btn('reveal-btn', S.revealed ? 'Next question' : 'Reveal', 'primary', actions.reveal));
+      nav.appendChild(btn('new-btn', 'Skip', '', actions.fresh));
+      $('hint').innerHTML = '<kbd>Space</kbd> reveal, then next question · <kbd>N</kbd> skip · <kbd>V</kbd> change visual · <kbd>F</kbd> full screen';
+    } else {
+      drawAll();
+      $('hint').innerHTML = 'Click a bond to show it big · <kbd>V</kbd> change visual · <kbd>F</kbd> full screen';
+    }
+    nav.appendChild(btn('fs-btn', 'Full screen', '', toggleFs));
+  }
+
+  function toggleFs() {
+    try {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(function () {});
+    } catch (e) {}
+  }
+
+  $('modeSeg').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; S.mode = b.dataset.mode; if (S.mode === 'missing') newQuestion(); render(); });
+  wholeSeg.addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; S.whole = +b.dataset.whole; S.part = 0; newQuestion(); render(); });
+  $('visSeg').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; S.vis = b.dataset.vis; render(); });
+  $('numSeg').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; S.nums = b.dataset.num === '1'; render(); });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var k = e.key, handled = true;
+    if (k === 'ArrowRight' && S.mode === 'explore') actions.next();
+    else if (k === 'ArrowLeft' && S.mode === 'explore') actions.prev();
+    else if ((k === ' ' || k === 'Enter') && S.mode === 'missing') actions.reveal();
+    else if ((k === 'n' || k === 'N') && S.mode === 'missing') actions.fresh();
+    else if (/^[2-9]$/.test(k) || k === '0') { S.whole = k === '0' ? 10 : +k; S.part = 0; newQuestion(); render(); }
+    else if (k === 'v' || k === 'V') { var o = ['dots','frame','numicon']; S.vis = o[(o.indexOf(S.vis) + 1) % o.length]; render(); }
+    else if (k === 'f' || k === 'F') toggleFs();
+    else handled = false;
+    if (handled) e.preventDefault();
+  });
+
+  newQuestion();
+  render();
+})();
+</script>
+</body>
+</html>
