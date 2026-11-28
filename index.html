@@ -105,12 +105,32 @@ button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 kbd { font-family: var(--font-body); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 0 5px; font-size: .8rem; }
 .counter { font-family: var(--font-display); color: var(--ink-soft); font-size: 1rem; min-width: 4em; text-align: center; }
 @media (max-width: 640px) { .brand { width: 100%; } .hint { display: none; } }
+/* Phones: each control row on one line, label above it, buttons sharing the width. */
+@media (max-width: 640px) {
+  .bar { gap: 8px; }
+  .group:has(#wholeSeg), .group:has(#visSeg), .group:has(#modeSeg) { width: 100%; display: grid; gap: 2px; }
+  #wholeSeg, #visSeg, #modeSeg { flex-wrap: nowrap; }
+  #wholeSeg button { flex: 1 1 0; width: auto; min-width: 0; font-size: .95rem; }
+  #visSeg button, #modeSeg button { flex: 1 1 auto; min-width: 0; padding: 6px 3px; font-size: .74rem; white-space: nowrap; }
+  #modeSeg button { font-size: .85rem; }
+  .stage { flex: none; height: 62vh; min-height: 300px; }
+  /* Settings (bonds to, show as, numerals) tuck away behind the gear. */
+  .brand { display: flex; align-items: center; justify-content: space-between; }
+  .brand #gear { display: inline-flex; }
+  #settings:not(.open) { display: none; }
+}
+#gear { display: none; border: 0; background: var(--chip); border-radius: 10px; padding: 7px; color: var(--ink); }
+#gear[aria-expanded="true"] { background: var(--accent); color: var(--accent-ink); }
+/* Phones and tablets: no full screen button (iPhone can't do it, and it isn't needed there). */
+@media (max-width: 640px), (hover: none) and (pointer: coarse) { #fs-btn { display: none; } }
 </style>
 </head>
 <body>
 
 <header class="bar">
-  <div class="brand">Number Bonds</div>
+  <div class="brand">Number Bonds
+    <button id="gear" aria-label="Settings" aria-expanded="false" aria-controls="settings"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+  </div>
   <div class="group" role="group" aria-label="Activity">
     <div class="seg" id="modeSeg">
       <button id="m-explore" data-mode="explore">Explore</button>
@@ -119,7 +139,7 @@ kbd { font-family: var(--font-body); border: 1px solid var(--line); border-botto
     </div>
   </div>
 </header>
-<div class="bar">
+<div class="bar" id="settings">
   <div class="group"><span class="label">Bonds to</span><div class="seg num" id="wholeSeg"></div></div>
   <div class="group"><span class="label">Show as</span>
     <div class="seg" id="visSeg">
@@ -327,8 +347,7 @@ kbd { font-family: var(--font-body); border: 1px solid var(--line); border-botto
   var actions = {
     prev: function () { S.part = (S.part + S.whole) % (S.whole + 1); render(); },
     next: function () { S.part = (S.part + 1) % (S.whole + 1); render(); },
-    reveal: function () { if (!S.revealed) { S.revealed = true; render(true); } else { newQuestion(); render(); } },
-    fresh: function () { newQuestion(); render(); }
+    reveal: function () { if (!S.revealed) { S.revealed = true; render(true); } else { newQuestion(); render(); } }
   };
 
   function render(justRevealed) {
@@ -355,8 +374,7 @@ kbd { font-family: var(--font-body); border: 1px solid var(--line); border-botto
       var ma = S.missA, mb = S.whole - ma, hide = S.revealed ? 0 : S.hideSide;
       drawModel(ma, mb, hide, justRevealed ? S.hideSide : 0); equation(ma, mb, hide);
       nav.appendChild(btn('reveal-btn', S.revealed ? 'Next question' : 'Reveal', 'primary', actions.reveal));
-      nav.appendChild(btn('new-btn', 'Skip', '', actions.fresh));
-      $('hint').innerHTML = '<kbd>Space</kbd> reveal, then next question · <kbd>N</kbd> skip · <kbd>V</kbd> change visual · <kbd>F</kbd> full screen';
+      $('hint').innerHTML = '<kbd>Space</kbd> reveal, then next question · <kbd>V</kbd> change visual · <kbd>F</kbd> full screen';
     } else {
       drawAll();
       $('hint').innerHTML = 'Click a bond to show it big · <kbd>V</kbd> change visual · <kbd>F</kbd> full screen';
@@ -371,6 +389,10 @@ kbd { font-family: var(--font-body); border: 1px solid var(--line); border-botto
     } catch (e) {}
   }
 
+  $('gear').addEventListener('click', function () {
+    var open = $('settings').classList.toggle('open');
+    $('gear').setAttribute('aria-expanded', open);
+  });
   $('modeSeg').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; S.mode = b.dataset.mode; if (S.mode === 'missing') newQuestion(); render(); });
   wholeSeg.addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; S.whole = +b.dataset.whole; S.part = 0; newQuestion(); render(); });
   $('visSeg').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; S.vis = b.dataset.vis; render(); });
@@ -382,7 +404,6 @@ kbd { font-family: var(--font-body); border: 1px solid var(--line); border-botto
     if (k === 'ArrowRight' && S.mode === 'explore') actions.next();
     else if (k === 'ArrowLeft' && S.mode === 'explore') actions.prev();
     else if ((k === ' ' || k === 'Enter') && S.mode === 'missing') actions.reveal();
-    else if ((k === 'n' || k === 'N') && S.mode === 'missing') actions.fresh();
     else if (/^[2-9]$/.test(k) || k === '0') { S.whole = k === '0' ? 10 : +k; S.part = 0; newQuestion(); render(); }
     else if (k === 'v' || k === 'V') { S.vis = VIS[(VIS.indexOf(S.vis) + 1) % VIS.length]; render(); }
     else if (k === 'f' || k === 'F') toggleFs();
