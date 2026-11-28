@@ -90,6 +90,7 @@ button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 }
 .row:hover { border-color: var(--accent); }
 .row svg { width: 100%; height: 84px; }
+.all.friends .row svg { height: 110px; background: #FFFFFF; border-radius: 10px; }
 .row .sym { font-family: var(--font-display); font-size: 1.6rem; color: var(--ink-soft); }
 .row .tot { font-family: var(--font-display); font-weight: 800; font-size: 1.9rem; min-width: 1.4em; text-align: center; }
 .row .pair { font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; color: var(--ink-soft); white-space: nowrap; }
@@ -125,6 +126,7 @@ kbd { font-family: var(--font-body); border: 1px solid var(--line); border-botto
       <button id="v-dots" data-vis="dots">Dots</button>
       <button id="v-frame" data-vis="frame">Ten frame</button>
       <button id="v-numicon" data-vis="numicon">Numicon</button>
+      <button id="v-friends" data-vis="friends">Number friends</button>
     </div>
   </div>
   <div class="group"><span class="label">Numerals</span>
@@ -150,9 +152,13 @@ kbd { font-family: var(--font-body); border: 1px solid var(--line); border-botto
   var PLATE = { 1:'#F28C28', 2:'#6EC6F0', 3:'#9BCB4A', 4:'#F49AC1', 5:'#FFD23F', 6:'#8E5BB5', 7:'#FAFAF7', 8:'#E2393B', 9:'#2E8B57', 10:'#1F4FA3' };
   var EDGE  = { 1:'#B35F12', 2:'#3B93BD', 3:'#6C9A25', 4:'#C9659A', 5:'#C9A11C', 6:'#5E3683', 7:'#9AA0AE', 8:'#A3191B', 9:'#1A5C38', 10:'#132F66' };
 
+  var VIS = ['dots','frame','numicon','friends'];
+  var FRIEND_SRC = function (n) { return 'public/number-friends/' + n + '.jpg'; };
+  for (var pi = 1; pi <= 10; pi++) { new Image().src = FRIEND_SRC(pi); } // preload so switching is instant
+
   var S = { mode: 'explore', whole: 5, vis: 'dots', nums: true, part: 0, missA: 2, hideSide: 1, revealed: false };
   try { var saved = JSON.parse(localStorage.getItem('nb-settings') || '{}'); ['mode','whole','vis','nums'].forEach(function (k) { if (k in saved) S[k] = saved[k]; }); } catch (e) {}
-  if (['dots','frame','numicon'].indexOf(S.vis) < 0) S.vis = 'dots';
+  if (VIS.indexOf(S.vis) < 0) S.vis = 'dots';
   if (!(S.whole >= 2 && S.whole <= 10)) S.whole = 5;
   function save() { try { localStorage.setItem('nb-settings', JSON.stringify({ mode:S.mode, whole:S.whole, vis:S.vis, nums:S.nums })); } catch (e) {} }
 
@@ -196,6 +202,13 @@ kbd { font-family: var(--font-body); border: 1px solid var(--line); border-botto
   function visual(kind, n, whole, colours) {
     // colours: array of length n with fill per item (dots / frame), ignored for numicon
     var u = 10, svg = '', w, h;
+    if (kind === 'friends') {
+      // The picture for this number, fitted into a square; an empty dashed outline for 0.
+      w = h = 100;
+      if (n > 0) svg = '<image href="' + FRIEND_SRC(n) + '" x="0" y="0" width="100" height="100" preserveAspectRatio="xMidYMid meet"/>';
+      else svg = '<rect x="30" y="30" width="40" height="40" rx="8" fill="none" stroke="var(--frame)" stroke-width="2.5" stroke-dasharray="6 6"/>';
+      return { w: w, h: h, svg: svg };
+    }
     if (kind === 'numicon') {
       var rowsW = Math.ceil(whole / 2);
       w = 2 * u; h = rowsW * u;
@@ -233,7 +246,8 @@ kbd { font-family: var(--font-body); border: 1px solid var(--line); border-botto
   var G = { W: { x: 500, y: 168, r: 148 }, A: { x: 245, y: 462, r: 138 }, B: { x: 755, y: 462, r: 138 } };
 
   function circle(c, opts) {
-    var out = '<circle cx="' + c.x + '" cy="' + c.y + '" r="' + c.r + '" fill="var(--surface)" stroke="' + (opts.stroke || 'var(--line)') + '" stroke-width="5"' + (opts.dashed ? ' stroke-dasharray="16 12"' : '') + '/>';
+    var bg = S.vis === 'friends' ? '#FFFFFF' : 'var(--surface)'; // the pictures have white backgrounds
+    var out = '<circle cx="' + c.x + '" cy="' + c.y + '" r="' + c.r + '" fill="' + bg + '" stroke="' + (opts.stroke || 'var(--line)') + '" stroke-width="5"' + (opts.dashed ? ' stroke-dasharray="16 12"' : '') + '/>';
     return out;
   }
   function badge(c, text, colour, cls) {
@@ -244,6 +258,7 @@ kbd { font-family: var(--font-body); border: 1px solid var(--line); border-botto
 
   function drawModel(a, b, hide, revealedSide) {
     var whole = S.whole, vis = S.vis, out = '';
+    var plain = vis === 'numicon' || vis === 'friends', scale = vis === 'friends' ? 1.42 : 1.32;
     var colA = 'var(--partA)', colB = 'var(--partB)';
     out += '<line x1="' + G.W.x + '" y1="' + G.W.y + '" x2="' + G.A.x + '" y2="' + G.A.y + '" stroke="var(--line)" stroke-width="8" stroke-linecap="round"/>';
     out += '<line x1="' + G.W.x + '" y1="' + G.W.y + '" x2="' + G.B.x + '" y2="' + G.B.y + '" stroke="var(--line)" stroke-width="8" stroke-linecap="round"/>';
@@ -251,7 +266,7 @@ kbd { font-family: var(--font-body); border: 1px solid var(--line); border-botto
     // whole
     out += circle(G.W, { stroke: 'var(--whole)' });
     var wCols = hide ? fill(whole, 'var(--whole)') : fill(a, colA).concat(fill(b, colB));
-    out += place(visual(vis, whole, whole, wCols), G.W.x, G.W.y, G.W.r * 1.32);
+    out += place(visual(vis, whole, whole, wCols), G.W.x, G.W.y, G.W.r * scale);
     if (S.nums) out += badge(G.W, whole, 'var(--whole)');
 
     // parts
@@ -264,16 +279,16 @@ kbd { font-family: var(--font-body); border: 1px solid var(--line); border-botto
         out += '<text x="' + c.x + '" y="' + (c.y + 8) + '" text-anchor="middle" dominant-baseline="middle" font-family="Baloo 2, system-ui, sans-serif" font-weight="800" font-size="170" fill="var(--ink-soft)">?</text>';
         return;
       }
-      out += circle(c, { stroke: vis === 'numicon' ? 'var(--line)' : col });
-      out += '<g class="' + popCls + '">' + place(visual(vis, n, whole, fill(n, col)), c.x, c.y, c.r * 1.32) + '</g>';
-      if (S.nums) out += badge(c, n, vis === 'numicon' ? 'var(--whole)' : col, popCls);
+      out += circle(c, { stroke: plain ? 'var(--line)' : col });
+      out += '<g class="' + popCls + '">' + place(visual(vis, n, whole, fill(n, col)), c.x, c.y, c.r * scale) + '</g>';
+      if (S.nums) out += badge(c, n, plain ? 'var(--whole)' : col, popCls);
     });
     $('model').innerHTML = out;
   }
 
   function equation(a, b, hide) {
     var eq = $('equation');
-    eq.className = 'equation' + (S.vis === 'numicon' ? ' plain' : '');
+    eq.className = 'equation' + (S.vis === 'numicon' || S.vis === 'friends' ? ' plain' : '');
     if (!S.nums) { eq.innerHTML = ''; return; }
     var sa = hide === 1 ? '<span class="q">?</span>' : '<span class="a">' + a + '</span>';
     var sb = hide === 2 ? '<span class="q">?</span>' : '<span class="b">' + b + '</span>';
@@ -292,6 +307,7 @@ kbd { font-family: var(--font-body); border: 1px solid var(--line); border-botto
         (S.nums ? '<span class="tot">' + S.whole + '</span>' : '<span></span>') + '</button>';
     }
     $('all').innerHTML = html;
+    $('all').classList.toggle('friends', S.vis === 'friends');
     $('all').querySelectorAll('.row').forEach(function (r) {
       r.addEventListener('click', function () { S.part = +r.dataset.part; S.mode = 'explore'; render(); });
       if (S.nums) r.setAttribute('aria-label', r.dataset.part + ' plus ' + (S.whole - r.dataset.part) + ' equals ' + S.whole);
@@ -368,7 +384,7 @@ kbd { font-family: var(--font-body); border: 1px solid var(--line); border-botto
     else if ((k === ' ' || k === 'Enter') && S.mode === 'missing') actions.reveal();
     else if ((k === 'n' || k === 'N') && S.mode === 'missing') actions.fresh();
     else if (/^[2-9]$/.test(k) || k === '0') { S.whole = k === '0' ? 10 : +k; S.part = 0; newQuestion(); render(); }
-    else if (k === 'v' || k === 'V') { var o = ['dots','frame','numicon']; S.vis = o[(o.indexOf(S.vis) + 1) % o.length]; render(); }
+    else if (k === 'v' || k === 'V') { S.vis = VIS[(VIS.indexOf(S.vis) + 1) % VIS.length]; render(); }
     else if (k === 'f' || k === 'F') toggleFs();
     else handled = false;
     if (handled) e.preventDefault();
