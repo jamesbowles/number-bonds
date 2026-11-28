@@ -347,8 +347,7 @@ kbd { font-family: var(--font-body); border: 1px solid var(--line); border-botto
   var actions = {
     prev: function () { S.part = (S.part + S.whole) % (S.whole + 1); render(); },
     next: function () { S.part = (S.part + 1) % (S.whole + 1); render(); },
-    reveal: function () { if (!S.revealed) { S.revealed = true; render(true); } else { newQuestion(); render(); } },
-    fresh: function () { newQuestion(); render(); }
+    reveal: function () { if (!S.revealed) { S.revealed = true; render(true); } else { newQuestion(); render(); } }
   };
 
   function render(justRevealed) {
@@ -375,8 +374,7 @@ kbd { font-family: var(--font-body); border: 1px solid var(--line); border-botto
       var ma = S.missA, mb = S.whole - ma, hide = S.revealed ? 0 : S.hideSide;
       drawModel(ma, mb, hide, justRevealed ? S.hideSide : 0); equation(ma, mb, hide);
       nav.appendChild(btn('reveal-btn', S.revealed ? 'Next question' : 'Reveal', 'primary', actions.reveal));
-      nav.appendChild(btn('new-btn', 'Skip', '', actions.fresh));
-      $('hint').innerHTML = '<kbd>Space</kbd> reveal, then next question · <kbd>N</kbd> skip · <kbd>V</kbd> change visual · <kbd>F</kbd> full screen';
+      $('hint').innerHTML = '<kbd>Space</kbd> reveal, then next question · <kbd>V</kbd> change visual · <kbd>F</kbd> full screen';
     } else {
       drawAll();
       $('hint').innerHTML = 'Click a bond to show it big · <kbd>V</kbd> change visual · <kbd>F</kbd> full screen';
@@ -406,7 +404,6 @@ kbd { font-family: var(--font-body); border: 1px solid var(--line); border-botto
     if (k === 'ArrowRight' && S.mode === 'explore') actions.next();
     else if (k === 'ArrowLeft' && S.mode === 'explore') actions.prev();
     else if ((k === ' ' || k === 'Enter') && S.mode === 'missing') actions.reveal();
-    else if ((k === 'n' || k === 'N') && S.mode === 'missing') actions.fresh();
     else if (/^[2-9]$/.test(k) || k === '0') { S.whole = k === '0' ? 10 : +k; S.part = 0; newQuestion(); render(); }
     else if (k === 'v' || k === 'V') { S.vis = VIS[(VIS.indexOf(S.vis) + 1) % VIS.length]; render(); }
     else if (k === 'f' || k === 'F') toggleFs();
