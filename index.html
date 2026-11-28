@@ -176,9 +176,10 @@ kbd { font-family: var(--font-body); border: 1px solid var(--line); border-botto
   var FRIEND_SRC = function (n) { return 'public/number-friends/' + n + '.jpg'; };
   for (var pi = 1; pi <= 10; pi++) { new Image().src = FRIEND_SRC(pi); } // preload so switching is instant
 
-  var S = { mode: 'explore', whole: 5, vis: 'dots', nums: true, part: 0, missA: 2, hideSide: 1, revealed: false };
-  try { var saved = JSON.parse(localStorage.getItem('nb-settings') || '{}'); ['mode','whole','vis','nums'].forEach(function (k) { if (k in saved) S[k] = saved[k]; }); } catch (e) {}
-  if (VIS.indexOf(S.vis) < 0) S.vis = 'dots';
+  // Always opens on Missing part with Ten frame; the whole and numerals are remembered.
+  var S = { mode: 'missing', whole: 5, vis: 'frame', nums: true, part: 0, missA: 2, hideSide: 1, revealed: false };
+  try { var saved = JSON.parse(localStorage.getItem('nb-settings') || '{}'); ['whole','nums'].forEach(function (k) { if (k in saved) S[k] = saved[k]; });  } catch (e) {}
+  if (VIS.indexOf(S.vis) < 0) S.vis = 'frame';
   if (!(S.whole >= 2 && S.whole <= 10)) S.whole = 5;
   function save() { try { localStorage.setItem('nb-settings', JSON.stringify({ mode:S.mode, whole:S.whole, vis:S.vis, nums:S.nums })); } catch (e) {} }
 
